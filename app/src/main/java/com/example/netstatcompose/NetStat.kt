@@ -1,5 +1,6 @@
 package com.example.netstatcompose
 
+import android.app.Application
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
@@ -59,6 +60,12 @@ object NetStat{
         connectivityManager.requestNetwork(networkRequest, networkCallback)
     }
 
+    fun release(
+        appContext: Application
+    ){
+        connectivityManager.unregisterNetworkCallback(networkCallback)
+    }
+
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
             super.onAvailable(network)
@@ -85,7 +92,7 @@ object NetStat{
         }
     }
 
-    fun isNetworkOnline(): Boolean {
+    fun isOnline(): Boolean {
         var isOnline = false
         try {
             val runtime = Runtime.getRuntime()
@@ -133,13 +140,32 @@ object NetStat{
             else{
                 var block: ((stat: Stat)->Unit)? = null
                 block = {stat: Stat->
-                    callbacks.remove(block)
-                    it.resume(stat){}
+                    if(stat==targetStat){
+                        callbacks.remove(block)
+                        it.resume(stat){}
+                    }
                 }
                 callbacks.add(block)
             }
         }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    suspend fun waitFor(condition: (Stat)->Boolean): Stat =
+        suspendCancellableCoroutine {
+            if(condition(stat)){
+                it.resume(stat){}
+            }
+            else{
+                var block: ((stat: Stat)->Unit)? = null
+                block = {stat: Stat->
+                    if(condition(NetStat.stat)){
+                        callbacks.remove(block)
+                        it.resume(stat){}
+                    }
+                }
+                callbacks.add(block)
+            }
+        }
     private val _events = MutableSharedFlow<Stat>()
     val events = _events.asSharedFlow()
 
