@@ -6,6 +6,14 @@ Checking and tracking network state in android is common for a developer.
 
 Here I have created a useful utility for that.
 
+# Setup
+
+It is not a library so that you can add dependency.
+
+Clone the repo and check how it works.
+
+Visit https://medium.com/@debduttapanda/android-network-state-481d579c2aa6 for setup.
+
 # NetStat.kt
 
 # Usage
